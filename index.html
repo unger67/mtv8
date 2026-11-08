@@ -156,7 +156,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
         <button type="button" id="pdfBtn">Als PDF speichern</button>
         <p class="hint" id="pdfMsg" role="status"></p>
       </div>
-      <p class="hint">Formel: Grundanspruch × (Tage im Monat − abzuziehende Abwesenheitstage) ÷ Tage im Monat. Der Block von vier freien Tagen steht nur zu, wenn der gerundete Anspruch den Mindestanspruch erreicht.</p>
+      <p class="hint" id="formula"></p>
     </section>
   </div>
 </main>
@@ -235,6 +235,17 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
       $("rBlock").textContent = "0 Tage";
       $("rSingle").textContent = fmt(claim) + " Tage";
     }
+    var basisVal = $("basis").value, baseText;
+    if (basisVal === "year") {
+      var leapYear = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+      var yd = leapYear && $("leap").value === "yes" ? 366 : 365;
+      baseText = "Grundanspruch = 136 Tage ÷ " + yd + " Tage × " + days + " Tage im Monat.";
+    } else if (basisVal === "quarter") {
+      baseText = "Grundanspruch = 34 Tage je Quartal ÷ 3 Monate.";
+    } else {
+      baseText = "Grundanspruch = " + (days === 31 ? "11 Tage (Monat mit 31 Tagen)" : "10 Tage (Monat mit " + days + " Tagen)") + ".";
+    }
+    $("formula").textContent = baseText + " Anspruch = Grundanspruch × (Tage im Monat − abzuziehende Abwesenheitstage) ÷ Tage im Monat, danach gerundet. Der Block von " + block + " freien Tagen steht nur zu, wenn der gerundete Anspruch den Mindestanspruch erreicht.";
     last = {
       month: MONTHS[m - 1] + " " + y, claim: claim, ok: ok, block: block, minDays: minDays,
       basis: $("basis").selectedOptions[0].textContent + ($("basis").value === "year" ? " – " + $("leap").selectedOptions[0].textContent : ""), round: $("round").selectedOptions[0].textContent,
