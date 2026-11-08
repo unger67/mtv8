@@ -94,7 +94,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
       <div class="row">
         <label for="basis">Berechnung des Anspruchs über</label>
         <select id="basis">
-          <option value="year">Jahresquote (136 Tage / 12)</option>
+          <option value="year">Jahresquote (136 Tage je 365 Tage)</option>
           <option value="quarter">Quartalsquote (34 Tage / 3)</option>
           <option value="monthdays" selected>Monatsquote (31 Tage = 11, 30 Tage und Februar = 10)</option>
         </select>
@@ -166,7 +166,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
   var last = null;
 
   function baseQuota(basis, days) {
-    if (basis === "year") return 136 / 12;
+    if (basis === "year") return 136 / 365 * days;
     if (basis === "quarter") return 34 / 3;
     return days === 31 ? 11 : 10;
   }
