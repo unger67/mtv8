@@ -100,6 +100,14 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
         </select>
       </div>
 
+      <div class="row">
+        <label for="leap">Schaltjahr bei der Jahresquote</label>
+        <select id="leap">
+          <option value="no" selected>Nicht berücksichtigen (immer 365 Tage)</option>
+          <option value="yes">Berücksichtigen (366 Tage im Schaltjahr)</option>
+        </select>
+      </div>
+
       <h2>Abwesenheiten im Monat (Kalendertage)</h2>
       <div class="abs">
         <label for="vac">Urlaub</label><input type="number" id="vac" min="0" step="1" value="5">
@@ -165,8 +173,11 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
   $("month").value = cur < MIN_MONTH ? MIN_MONTH : cur;
   var last = null;
 
-  function baseQuota(basis, days) {
-    if (basis === "year") return 136 / 365 * days;
+  function baseQuota(basis, days, y) {
+    if (basis === "year") {
+      var leapYear = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+      return 136 / (leapYear && $("leap").value === "yes" ? 366 : 365) * days;
+    }
     if (basis === "quarter") return 34 / 3;
     return days === 31 ? 11 : 10;
   }
@@ -198,7 +209,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
     $("err").textContent = total > days ? "Die Abwesenheiten überschreiten die " + days + " Tage des Monats. Es wird mit höchstens " + days + " Tagen gerechnet." : notice;
     abs = Math.min(abs, days);
 
-    var base = baseQuota($("basis").value, days);
+    var base = baseQuota($("basis").value, days, y);
     var share = (days - abs) / days;
     var claim = round(base * share, $("round").value);
     var minDays = num("minDays"), block = Math.max(1, Math.floor(num("blockDays")));
@@ -224,7 +235,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
     }
     last = {
       month: MONTHS[m - 1] + " " + y, claim: claim, ok: ok, block: block, minDays: minDays,
-      basis: $("basis").selectedOptions[0].textContent, round: $("round").selectedOptions[0].textContent,
+      basis: $("basis").selectedOptions[0].textContent + ($("basis").value === "year" ? " – " + $("leap").selectedOptions[0].textContent : ""), round: $("round").selectedOptions[0].textContent,
       vac: num("vac"), part: num("part"), sick: num("sick"),
       rows: [
         ["Tage im Monat", $("rDays").textContent],
