@@ -34,6 +34,7 @@
   --accent: #6cb8e6; --accent-fg: #0a1620; --ok: #7fd9a2; --ok-bg: #173b27; --no: #f2a595; --no-bg: #46211a;
   color-scheme: dark;
 }
+[hidden] { display: none !important; }
 * { box-sizing: border-box; }
 body { margin: 0; }
 body {
@@ -100,7 +101,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
         </select>
       </div>
 
-      <div class="row">
+      <div class="row" id="leapRow" hidden>
         <label for="leap">Schaltjahr bei der Jahresquote</label>
         <select id="leap">
           <option value="no" selected>Nicht berücksichtigen (immer 365 Tage)</option>
@@ -199,6 +200,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
     var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
     if (!y || !m) { $("err").textContent = "Bitte einen Monat wählen."; return; }
     var days = new Date(y, m, 0).getDate();
+    $("leapRow").hidden = !(y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0));
     var num = function (id) { return Math.max(0, parseFloat($(id).value) || 0); };
     var abs = 0;
     if ($("vacOn").checked) abs += num("vac");
