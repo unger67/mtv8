@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Freie-Tage-Rechner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: zwei Spalten (Eingaben links, Ergebnis rechts), auf dem Handy untereinander */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --fg: #172430;
+  --muted: #5b6b78;
+  --line: #d3dae0;
+  --accent: #0b5c8a;
+  --accent-fg: #ffffff;
+  --ok: #17703f;
+  --ok-bg: #dff3e6;
+  --no: #a3341f;
+  --no-bg: #f9e1dc;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11181e; --surface: #1a232b; --fg: #e6ecf0; --muted: #98a8b4; --line: #2e3b46;
+    --accent: #6cb8e6; --accent-fg: #0a1620; --ok: #7fd9a2; --ok-bg: #173b27; --no: #f2a595; --no-bg: #46211a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11181e; --surface: #1a232b; --fg: #e6ecf0; --muted: #98a8b4; --line: #2e3b46;
+  --accent: #6cb8e6; --accent-fg: #0a1620; --ok: #7fd9a2; --ok-bg: #173b27; --no: #f2a595; --no-bg: #46211a;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-block: 28px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+main { max-width: 980px; margin: 0 auto; display: grid; gap: 20px; }
+h1 { font-size: 1.7rem; font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+.lead { color: var(--muted); margin: 6px 0 0; max-width: 65ch; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 20px; display: grid; gap: 16px; min-width: 0; }
+h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; font-weight: 600; }
+.row { display: grid; gap: 6px; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+label { font-weight: 500; font-size: 0.9rem; }
+input[type="number"], input[type="month"], select {
+  font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 4px;
+  padding: 8px 10px; width: 100%; min-width: 0;
+}
+input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.abs { display: grid; grid-template-columns: minmax(0, 1fr) 90px; gap: 8px 12px; align-items: center; }
+.abs .chk { grid-column: 1 / -1; font-size: 0.82rem; color: var(--muted); display: flex; gap: 6px; align-items: center; font-weight: 400; margin-top: -4px; }
+.hint { font-size: 0.82rem; color: var(--muted); margin: 0; }
+.big { display: grid; gap: 4px; }
+.big .num { font-family: var(--font-mono); font-size: 3rem; font-weight: 500; line-height: 1; font-variant-numeric: tabular-nums; }
+.big .unit { color: var(--muted); }
+.verdict { padding: 12px 14px; border-radius: 4px; font-weight: 600; }
+.verdict.ok { background: var(--ok-bg); color: var(--ok); }
+.verdict.no { background: var(--no-bg); color: var(--no); }
+.verdict small { display: block; font-weight: 400; margin-top: 2px; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+td { padding: 6px 0; border-top: 1px solid var(--line); }
+td:last-child { text-align: right; font-family: var(--font-mono); }
+button { font: inherit; font-weight: 600; background: var(--accent); color: var(--accent-fg); border: 0; border-radius: 4px; padding: 10px 14px; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.err { color: var(--no); font-size: 0.85rem; min-height: 1.2em; margin: 0; }
+</style>
+
+</head>
+<body>
+<main>
+  <header>
+    <h1>Freie-Tage-Rechner (MTV8)</h1>
+    <p class="lead">Berechnet den Anspruch auf freie Tage in einem Monat nach Abwesenheiten und prüft, ob vier zusammenhängende freie Tage zustehen.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-label="Eingaben">
+      <h2>Eingaben</h2>
+      <div class="row">
+        <label for="month">Monat</label>
+        <input type="month" id="month" min="2027-01">
+        <p class="hint">Auswählbar ab Januar 2027.</p>
+      </div>
+      <div class="row">
+        <label for="basis">Berechnung des Anspruchs über</label>
+        <select id="basis">
+          <option value="year">Jahresquote (136 Tage / 12)</option>
+          <option value="quarter">Quartalsquote (34 Tage / 3)</option>
+          <option value="monthdays" selected>Monatsquote (31 Tage = 11, 30 Tage und Februar = 10)</option>
+        </select>
+      </div>
+
+      <h2>Abwesenheiten im Monat (Kalendertage)</h2>
+      <div class="abs">
+        <label for="vac">Urlaub</label><input type="number" id="vac" min="0" step="1" value="5">
+        <label class="chk"><input type="checkbox" id="vacOn" checked> mindert den Anspruch</label>
+        <label for="part">Teilzeit</label><input type="number" id="part" min="0" step="1" value="0">
+        <label class="chk"><input type="checkbox" id="partOn" checked> mindert den Anspruch</label>
+        <label for="sick">Krankheit</label><input type="number" id="sick" min="0" step="1" value="2">
+        <label class="chk"><input type="checkbox" id="sickOn" checked> mindert den Anspruch</label>
+      </div>
+
+      <h2>Regeln</h2>
+      <div class="two">
+        <div class="row"><label for="minDays">Mindestanspruch</label><input type="number" id="minDays" min="0" step="0.5" value="7"></div>
+        <div class="row"><label for="blockDays">Zusammenhängende Tage</label><input type="number" id="blockDays" min="1" step="1" value="4"></div>
+      </div>
+      <div class="row">
+        <label for="round">Rundung</label>
+        <select id="round">
+          <option value="up">Aufrunden auf ganze Tage</option>
+          <option value="floor">Abrunden auf ganze Tage</option>
+          <option value="commercial" selected>Kaufmännisch runden (ab 0,5 auf)</option>
+        </select>
+      </div>
+      <p class="err" id="err" role="alert"></p>
+    </section>
+
+    <section class="panel" aria-label="Ergebnis">
+      <h2>Ergebnis</h2>
+      <div class="big">
+        <div class="num" id="claim">0</div>
+        <div class="unit">freie Tage Anspruch im <span id="monthName"></span></div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+      <table>
+        <tbody>
+          <tr><td>Tage im Monat</td><td id="rDays"></td></tr>
+          <tr><td>Grundanspruch ohne Abwesenheit</td><td id="rBase"></td></tr>
+          <tr><td>Abzuziehende Abwesenheitstage</td><td id="rAbs"></td></tr>
+          <tr><td>Anwesenheitsanteil</td><td id="rShare"></td></tr>
+          <tr><td>Zusammenhängender Block</td><td id="rBlock"></td></tr>
+          <tr><td>Weitere Einzeltage</td><td id="rSingle"></td></tr>
+        </tbody>
+      </table>
+      <div class="row">
+        <button type="button" id="pdfBtn">Als PDF speichern</button>
+        <p class="hint" id="pdfMsg" role="status"></p>
+      </div>
+      <p class="hint">Formel: Grundanspruch × (Tage im Monat − abzuziehende Abwesenheitstage) ÷ Tage im Monat. Der Block von vier freien Tagen steht nur zu, wenn der gerundete Anspruch den Mindestanspruch erreicht.</p>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var MONTHS = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+  var fmt = function (n) { return n.toLocaleString("de-DE", { maximumFractionDigits: 2 }); };
+
+  var MIN_MONTH = "2027-01";
+  var now = new Date();
+  var cur = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0");
+  $("month").value = cur < MIN_MONTH ? MIN_MONTH : cur;
+  var last = null;
+
+  function baseQuota(basis, days) {
+    if (basis === "year") return 136 / 12;
+    if (basis === "quarter") return 34 / 3;
+    return days === 31 ? 11 : 10;
+  }
+
+  function round(v, mode) {
+    if (mode === "floor") return Math.floor(v + 1e-9);
+    if (mode === "up") return Math.ceil(v - 1e-9);
+    if (mode === "commercial") return Math.floor(v + 0.5 + 1e-9);
+    return Math.round(v * 100) / 100;
+  }
+
+  function calc() {
+    var notice = "";
+    if ($("month").value && $("month").value < MIN_MONTH) {
+      $("month").value = MIN_MONTH;
+      notice = "Es sind nur Monate ab Januar 2027 auswählbar.";
+    }
+    var parts = ($("month").value || "").split("-");
+    var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10);
+    if (!y || !m) { $("err").textContent = "Bitte einen Monat wählen."; return; }
+    var days = new Date(y, m, 0).getDate();
+    var num = function (id) { return Math.max(0, parseFloat($(id).value) || 0); };
+    var abs = 0;
+    if ($("vacOn").checked) abs += num("vac");
+    if ($("partOn").checked) abs += num("part");
+    if ($("sickOn").checked) abs += num("sick");
+    var total = num("vac") + num("part") + num("sick");
+
+    $("err").textContent = total > days ? "Die Abwesenheiten überschreiten die " + days + " Tage des Monats. Es wird mit höchstens " + days + " Tagen gerechnet." : notice;
+    abs = Math.min(abs, days);
+
+    var base = baseQuota($("basis").value, days);
+    var share = (days - abs) / days;
+    var claim = round(base * share, $("round").value);
+    var minDays = num("minDays"), block = Math.max(1, Math.floor(num("blockDays")));
+    var ok = claim >= minDays;
+
+    $("claim").textContent = fmt(claim);
+    $("monthName").textContent = MONTHS[m - 1] + " " + y;
+    $("rDays").textContent = days;
+    $("rBase").textContent = fmt(Math.round(base * 100) / 100) + " Tage";
+    $("rAbs").textContent = fmt(abs) + " Tage";
+    $("rShare").textContent = fmt(Math.round(share * 1000) / 10) + " %";
+
+    var v = $("verdict");
+    v.className = "verdict " + (ok ? "ok" : "no");
+    if (ok) {
+      v.innerHTML = block + " zusammenhängende freie Tage stehen zu<small>Anspruch " + fmt(claim) + " erreicht den Mindestanspruch von " + fmt(minDays) + " Tagen.</small>";
+      $("rBlock").textContent = block + " Tage";
+      $("rSingle").textContent = fmt(Math.max(0, claim - block)) + " Tage";
+    } else {
+      v.innerHTML = "Kein Anspruch auf " + block + " zusammenhängende freie Tage<small>Anspruch " + fmt(claim) + " liegt unter dem Mindestanspruch von " + fmt(minDays) + " Tagen.</small>";
+      $("rBlock").textContent = "0 Tage";
+      $("rSingle").textContent = fmt(claim) + " Tage";
+    }
+    last = {
+      month: MONTHS[m - 1] + " " + y, claim: claim, ok: ok, block: block, minDays: minDays,
+      basis: $("basis").selectedOptions[0].textContent, round: $("round").selectedOptions[0].textContent,
+      vac: num("vac"), part: num("part"), sick: num("sick"),
+      rows: [
+        ["Tage im Monat", $("rDays").textContent],
+        ["Grundanspruch ohne Abwesenheit", $("rBase").textContent],
+        ["Abzuziehende Abwesenheitstage", $("rAbs").textContent],
+        ["Anwesenheitsanteil", $("rShare").textContent],
+        ["Zusammenhängender Block", $("rBlock").textContent],
+        ["Weitere Einzeltage", $("rSingle").textContent]
+      ]
+    };
+  }
+
+  function buildPdf() {
+    var d = new window.jspdf.jsPDF({ unit: "mm", format: "a4" });
+    var x = 20, y = 24, w = 170;
+    d.setFont("helvetica", "bold"); d.setFontSize(18);
+    d.text("Freie Tage – " + last.month, x, y); y += 8;
+    d.setFont("helvetica", "normal"); d.setFontSize(10); d.setTextColor(90);
+    d.text("Erstellt am " + new Date().toLocaleDateString("de-DE"), x, y); y += 12;
+    d.setTextColor(0); d.setFontSize(12);
+    d.setFont("helvetica", "bold"); d.text("Anspruch: " + fmt(last.claim) + " freie Tage", x, y); y += 8;
+    d.setFont("helvetica", "normal");
+    var verdict = last.ok
+      ? last.block + " zusammenhängende freie Tage stehen zu (Mindestanspruch " + fmt(last.minDays) + " Tage erreicht)."
+      : "Kein Anspruch auf " + last.block + " zusammenhängende freie Tage (Mindestanspruch " + fmt(last.minDays) + " Tage nicht erreicht).";
+    var vl = d.splitTextToSize(verdict, w); d.text(vl, x, y); y += vl.length * 6 + 6;
+
+    d.setFont("helvetica", "bold"); d.text("Berechnung", x, y); y += 3;
+    d.setFont("helvetica", "normal"); d.setFontSize(11);
+    last.rows.forEach(function (r) {
+      y += 7; d.setDrawColor(200); d.line(x, y - 5, x + w, y - 5);
+      d.text(r[0], x, y); d.text(r[1], x + w, y, { align: "right" });
+    });
+    y += 14;
+    d.setFont("helvetica", "bold"); d.setFontSize(12); d.text("Eingaben", x, y); y += 7;
+    d.setFont("helvetica", "normal"); d.setFontSize(11);
+    var inp = [
+      "Berechnung über: " + last.basis,
+      "Rundung: " + last.round,
+      "Urlaub: " + fmt(last.vac) + " Tage, Teilzeit: " + fmt(last.part) + " Tage, Krankheit: " + fmt(last.sick) + " Tage"
+    ];
+    inp.forEach(function (t) { var l = d.splitTextToSize(t, w); d.text(l, x, y); y += l.length * 6; });
+    return d;
+  }
+
+  var btn = $("pdfBtn");
+  btn.addEventListener("click", function () {
+    $("pdfMsg").textContent = "";
+    try {
+      if (!last || !window.jspdf) { $("pdfMsg").textContent = "Der PDF-Export konnte nicht geladen werden."; return; }
+      buildPdf().save("Freie-Tage_" + $("month").value + ".pdf");
+      $("pdfMsg").textContent = "PDF gespeichert. Zum Drucken die Datei öffnen und drucken.";
+    } catch (e) {
+      $("pdfMsg").textContent = "Das PDF konnte nicht erstellt werden.";
+    }
+  });
+
+  document.querySelectorAll("input, select").forEach(function (el) {
+    el.addEventListener("input", calc);
+    el.addEventListener("change", calc);
+  });
+  calc();
+})();
+</script>
+</body>
+</html>
