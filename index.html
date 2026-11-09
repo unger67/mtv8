@@ -139,6 +139,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
       <h2>Ergebnis</h2>
       <div class="big">
         <div class="num" id="claim">0</div>
+        <div class="unit" id="claimExact"></div>
         <div class="unit">freie Tage Anspruch im <span id="monthName"></span></div>
       </div>
       <div class="verdict" id="verdict"></div>
@@ -253,7 +254,10 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
       baseText = "Grundanspruch = " + (days === 31 ? "11 Tage (Monat mit 31 Tagen)" : "10 Tage (Monat mit " + days + " Tagen)") + " (" + baseNote + ").";
     }
     $("formula").textContent = baseText + " Anspruch = Grundanspruch × (Tage im Monat − abzuziehende Abwesenheitstage) ÷ Tage im Monat, danach gerundet. Der Block von " + block + " freien Tagen steht nur zu, wenn der gerundete Anspruch den Mindestanspruch erreicht.";
+    var exactText = "(" + f2(base * share) + " Tage; Quotient " + fmt(days - abs) + " ÷ " + days + " = " + f4(share) + ")";
+    $("claimExact").textContent = exactText;
     last = {
+      exactText: exactText,
       month: MONTHS[m - 1] + " " + y, claim: claim, ok: ok, block: block, minDays: minDays,
       basis: $("basis").selectedOptions[0].textContent + ($("basis").value === "year" ? " – " + $("leap").selectedOptions[0].textContent : ""), round: $("round").selectedOptions[0].textContent,
       vac: num("vac"), part: num("part"), sick: num("sick"),
@@ -276,7 +280,7 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
     d.setFont("helvetica", "normal"); d.setFontSize(10); d.setTextColor(90);
     d.text("Erstellt am " + new Date().toLocaleDateString("de-DE"), x, y); y += 12;
     d.setTextColor(0); d.setFontSize(12);
-    d.setFont("helvetica", "bold"); d.text("Anspruch: " + fmt(last.claim) + " freie Tage", x, y); y += 8;
+    d.setFont("helvetica", "bold"); d.text("Anspruch: " + fmt(last.claim) + " freie Tage", x, y); y += 6; d.setFont("helvetica", "normal"); d.setFontSize(10); d.text(last.exactText, x, y); y += 8; d.setFontSize(12);
     d.setFont("helvetica", "normal");
     var verdict = last.ok
       ? last.block + " zusammenhängende freie Tage stehen zu (Mindestanspruch " + fmt(last.minDays) + " Tage erreicht)."
