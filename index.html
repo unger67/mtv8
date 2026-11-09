@@ -253,7 +253,8 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
       quotText = "34 ÷ " + qd + " = " + f4(34 / qd);
       baseText = "Grundanspruch = 34 Tage ÷ " + qd + " Tage im Quartal × " + days + " Tage im Monat (" + baseNote + "; Quotient 34 ÷ " + qd + " = " + f4(34 / qd) + ").";
     } else {
-      baseText = "Grundanspruch = " + (days === 31 ? "11 Tage (Monat mit 31 Tagen)" : "10 Tage (Monat mit " + days + " Tagen)") + " (" + baseNote + ").";
+      quotText = base + " ÷ " + days + " = " + f4(base / days);
+      baseText = "Grundanspruch = " + (days === 31 ? "11 Tage (Monat mit 31 Tagen)" : "10 Tage (Monat mit " + days + " Tagen)") + " (" + baseNote + "; Quotient " + quotText + ").";
     }
     $("formula").textContent = baseText + " Anspruch = Grundanspruch × (Tage im Monat − abzuziehende Abwesenheitstage) ÷ Tage im Monat, danach gerundet. Der Block von " + block + " freien Tagen steht nur zu, wenn der gerundete Anspruch den Mindestanspruch erreicht.";
     var exactText = "(" + f2(base * share) + " Tage" + (abs === 0 && quotText ? "; Quotient " + quotText : "") + ")";
