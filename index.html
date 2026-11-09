@@ -239,22 +239,24 @@ button:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
       $("rBlock").textContent = "0 Tage";
       $("rSingle").textContent = fmt(claim) + " Tage";
     }
-    var basisVal = $("basis").value, baseText;
+    var basisVal = $("basis").value, baseText, quotText = "";
     var f2 = function (n) { return n.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     var f4 = function (n) { return n.toLocaleString("de-DE", { minimumFractionDigits: 4, maximumFractionDigits: 4 }); };
     var baseNote = f2(base) + " Tage";
     if (basisVal === "year") {
       var leapYear = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
       var yd = leapYear && $("leap").value === "yes" ? 366 : 365;
+      quotText = "136 ÷ " + yd + " = " + f4(136 / yd);
       baseText = "Grundanspruch = 136 Tage ÷ " + yd + " Tage × " + days + " Tage im Monat (" + baseNote + "; Quotient 136 ÷ " + yd + " = " + f4(136 / yd) + ").";
     } else if (basisVal === "quarter") {
       var qd = quarterDays(m, y);
+      quotText = "34 ÷ " + qd + " = " + f4(34 / qd);
       baseText = "Grundanspruch = 34 Tage ÷ " + qd + " Tage im Quartal × " + days + " Tage im Monat (" + baseNote + "; Quotient 34 ÷ " + qd + " = " + f4(34 / qd) + ").";
     } else {
       baseText = "Grundanspruch = " + (days === 31 ? "11 Tage (Monat mit 31 Tagen)" : "10 Tage (Monat mit " + days + " Tagen)") + " (" + baseNote + ").";
     }
     $("formula").textContent = baseText + " Anspruch = Grundanspruch × (Tage im Monat − abzuziehende Abwesenheitstage) ÷ Tage im Monat, danach gerundet. Der Block von " + block + " freien Tagen steht nur zu, wenn der gerundete Anspruch den Mindestanspruch erreicht.";
-    var exactText = "(" + f2(base * share) + " Tage; Quotient " + fmt(days - abs) + " ÷ " + days + " = " + f4(share) + ")";
+    var exactText = "(" + f2(base * share) + " Tage" + (abs === 0 && quotText ? "; Quotient " + quotText : "") + ")";
     $("claimExact").textContent = exactText;
     last = {
       exactText: exactText,
